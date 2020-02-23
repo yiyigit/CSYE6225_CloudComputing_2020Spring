@@ -43,18 +43,10 @@ public class ProfessorsService {
 		}
 		return departmentProfList ;
 	}
-	// Adding a professor
-	public void addProfessor(String firstName, String lastName, String department, String joiningDate) {
-	
-		long nextAvailableId = prof_Map.size() + 1;
-		Professor prof = new Professor(nextAvailableId, firstName , lastName, department, joiningDate);
-		
-		prof_Map.put(nextAvailableId, prof);
-	}
+
 	
 	public void addProfessor(Professor prof) {
-		long nextAvailableId = prof_Map.size() + 1;	
-		prof_Map.put(nextAvailableId, prof);
+		prof_Map.put(prof.getProfessorId(), prof);
 	}
 	
 	// Getting One Professor

@@ -65,9 +65,7 @@ public class ProfessorsResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public void addProfessor(Professor prof) {
-			profService.addProfessor(prof.getFirstName(),prof.getLastName(),prof.getDepartment(),prof.getJoiningDate()
-					);
-
+			profService.addProfessor(prof);		
 	}
 
 	@PUT
