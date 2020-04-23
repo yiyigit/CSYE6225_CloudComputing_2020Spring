@@ -1,0 +1,145 @@
+// invoking dynamodb operations & lambda function
+
+{
+  "Comment": "Course creation using an AWS Lambda function",
+  "StartAt": "Determine if the course is new",
+  "States": {
+    "Determine if the course is new": {
+      "Type": "Pass",
+      "Next": "is boardId empty?"
+    },
+     "is boardId empty?": 
+    {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.boardId",
+          "StringEquals": "NULL",
+          "Next": "is list of Registered Students empty?"
+        }
+      ],
+      "Default": "course already exist"
+    },
+    "is list of Registered Students empty?":
+      {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.listOfRegisteredStudents ",
+          "StringEquals": "NULL",
+          "Next": "is notification Topic empty?"
+        }
+      ],
+      "Default": "course already exist"
+    },
+    "is notification Topic empty?":{
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.notificationTopic  ",
+          "StringEquals": "NULL",
+          "Next": "Determine if is a course or seminar"
+        }
+      ],
+      "Default": "course already exist"
+    },
+    "Determine if is a course or seminar":{
+       "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.department",
+          "StringEquals": "Seminar",
+          "Next": "It is a seminar"
+        }
+      ],
+      "Default":"It is a new course"
+    },
+    "It is a new course":{
+      "Type":"Pass",
+      "Next":"notify professor"
+    },
+    "It is a seminar":{
+      "Type":"Succeed"
+    },
+    "create a object in the Registrar table":{
+      "Type":"Task",
+       "Resource": "arn:aws:states:::dynamodb:putItem",
+      
+       "Parameters": {
+            "TableName": "Registrar",
+            "Item": {
+              "RegistrationId": {
+                "S.$": "$.registrationId"
+              },
+              "Department": {
+                    "S.$": "$.department"
+                  },
+                  "OfferingId": {
+                    "S.$": "$.courseId"
+                  },
+                  "OfferingType": {
+                    "S": "Course"
+                  },
+                  "PerUnitPrice": {
+                    "N": "1600"
+                  }
+            }
+            },
+            "ResultPath": "$.DynamoDB",
+      "Next":"create a new board"
+    },
+    "create a new board":{
+      "Type":"Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+            "Parameters": {
+                "TableName": "Board",
+                "Item": {
+                  "Id": {
+                    "S.$": "$.Id"
+                  }, 
+                  "boardId": {
+                    "S.$": "$.courseId"
+                  },
+                 
+                  "courseId": {
+                    "S.$": "$.courseId"
+                  }
+                }
+            },
+            "ResultPath": "$.DynamoDB",
+      "Next":"update course with new board"
+    },
+    "update course with new board" :{
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                 "TableName": "Course",
+                 "Key": {
+                     "Id": {
+                       "S.$": "$.Id"
+                       }
+                    },                
+               "UpdateExpression": "SET boardId = :updateBoardId",
+               "ExpressionAttributeValues": {
+                   ":updateBoardId": {
+                       "S.$": "$.courseId"
+                    }
+                 }
+              
+             },
+           "Next": "pass to end"
+    },
+    "notify professor":{
+      "Type":"Task",
+      "Resource":"arn:aws:lambda:us-west-2:725289566667:function:sendEmail",
+      "Next": "create a object in the Registrar table"
+    },
+    "pass to end":{
+      "Type":"Succeed"
+    },
+    "course already exist":{
+      "Type":"Fail",
+      "Cause":"no need to create a new course"
+    }
+  }
+}
