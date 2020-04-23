@@ -1,0 +1,33 @@
+'use strict'
+const aws = require('aws-sdk');
+aws.config.update({region: 'us-west-2'});
+
+exports.handler = (event, context, callback) => {
+    const ses = new aws.SES({region: 'us-west-2'});
+ 
+    const params = {
+        Destination: {
+            ToAddresses: [event.email]
+        },
+        Message: {
+            Body: {
+                Text: { Data: "Your course Id :"  + event.courseId + ". And your TA Id is:"  }       
+            },
+            
+            Subject: { Data: "Your course has been registered"}
+        },
+        
+        Source: "zhouyiyi1993@gmail.com"
+    };
+    
+     ses.sendEmail(params, function (err, data) {
+        callback(null, {data: data});
+        if (err) {
+            console.log(err);
+            context.fail(err);
+        } else {
+            console.log(data);
+            context.succeed(event);
+        }
+    });
+}
